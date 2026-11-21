@@ -13,7 +13,7 @@
 const ACTS = ['Movie — Friday, 8:00 p.m.', 'Bowling — Saturday, 7:00 p.m.', 'Dinner — Sunday, 6:00 p.m.'];
 const FRIENDS = [
   { name: 'Maya', gender: 'female' },
-  { name: 'Jon', gender: 'male' },
+  { name: 'Tom', gender: 'male' },
   { name: 'Priya', gender: 'female' },
 ];
 const REASONS = [
