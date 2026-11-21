@@ -10,7 +10,7 @@
 //   CLASS_CODE         optional; if set, students must enter this code to play
 
 // Keep these in sync with public/index.html
-const ACTS = ['Movie — Friday, 8:00 p.m.', 'Bowling — Saturday, 2:00 p.m.', 'Brunch — Sunday, 11:00 a.m.'];
+const ACTS = ['Movie — Friday, 8:00 p.m.', 'Bowling — Saturday, 7:00 p.m.', 'Dinner — Sunday, 6:00 p.m.'];
 const FRIENDS = [
   { name: 'Maya', gender: 'female' },
   { name: 'Jon', gender: 'male' },
