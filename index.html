@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Night Out</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: friendly classroom tool, confident and tidy, a little bit "Friday night".
+   IDEA: the learner's own phone — contacts, calls, a group text — beside an event ticket that lists the plans.
+   PICTURE: a working phone (the task itself), with a ticket-stub card of the three options next to it.
+   COLOUR and TYPE: warm paper ground, black phone, hot pink accent for calls, blue for the learner's bubbles; Outfit + Inter.
+   LAYOUT: phone left, ticket + checklist + transcript right; stacks to phone first under 900px. Teacher setup on #teacher. */
+:root{color-scheme:light dark;
+--bg:light-dark(#f7f3ec,#141117);--ink:light-dark(#1d1a22,#f2eef5);--muted:light-dark(#6a6370,#a8a1b0);
+--card:light-dark(#ffffff,#1e1a23);--line:light-dark(#e7dfd4,#302b37);--soft:light-dark(#f1ebe2,#26212c);
+--accent:#ff3d7f;--accent2:light-dark(#d81b60,#ff6b9d);--me:#2f6fed;--ok:light-dark(#1f8a4c,#4fd189);--bad:light-dark(#c62828,#ff7a7a)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:Outfit,Inter,sans-serif;line-height:1.1;margin:0;text-wrap:balance}
+h1{font-size:clamp(32px,4.4vw,46px);font-weight:800}
+h2{font-size:22px;font-weight:700}
+h3{font-size:17px;font-weight:700}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:clamp(20px,3.5vw,48px) max(4vw,16px)}
+header.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:end;justify-content:space-between;margin-bottom:24px}
+header.top p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.btn{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-weight:600}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:400px minmax(0,1fr);gap:clamp(20px,3vw,40px);align-items:start}
+@media(max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}.phone{margin:0 auto}}
+/* phone */
+.phone{width:min(100%,400px);height:min(760px,calc(100vh - 40px));min-height:600px;background:#0d0d0f;border-radius:44px;padding:12px;box-shadow:0 30px 60px -20px rgba(0,0,0,.45),inset 0 0 0 2px #2a2a2e;position:relative}
+.screen{height:100%;border-radius:34px;overflow:hidden;background:var(--card);display:flex;flex-direction:column;position:relative}
+.status{display:flex;justify-content:space-between;padding:12px 24px 6px;font-size:13px;font-weight:600}
+.appbar{display:flex;align-items:center;gap:10px;padding:8px 14px 12px;border-bottom:1px solid var(--line)}
+.appbar h2{font-size:20px;flex:1}
+.icon{width:44px;height:44px;border-radius:50%;border:0;background:transparent;display:grid;place-items:center}
+.icon svg{width:22px;height:22px}
+.list{flex:1;overflow-y:auto}
+.row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.av{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font:700 18px Outfit,sans-serif;color:#fff;flex:none}
+.row .who{flex:1}
+.row .who b{display:block;font-weight:600}
+.row .who small{color:var(--muted);font-size:13px}
+.round{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--soft);display:grid;place-items:center}
+.round svg{width:20px;height:20px}
+.round.call{background:var(--accent);border-color:var(--accent);color:#fff}
+.round:disabled{opacity:.35;cursor:not-allowed}
+.hint{padding:14px 16px;color:var(--muted);font-size:14px}
+.msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px}
+.b{max-width:82%;padding:9px 13px;border-radius:18px;background:var(--soft);align-self:flex-start;white-space:pre-wrap;overflow-wrap:anywhere}
+.b.me{background:var(--me);color:#fff;align-self:flex-end}
+.b .n{display:block;font-size:12px;font-weight:700;margin-bottom:2px}
+.sys{align-self:center;font-size:13px;color:var(--muted);text-align:center}
+.typing{align-self:flex-start;color:var(--muted);font-size:14px;font-style:italic}
+.compose{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);align-items:center}
+.compose input{flex:1;min-height:44px;border-radius:22px;border:1px solid var(--line);background:var(--bg);padding:0 16px;font-size:16px}
+/* call screen */
+.callscr{background:linear-gradient(180deg,#1b1424,#0e0b12);color:#f4f0f7}
+.callscr .appbar{border:0}
+.callhead{text-align:center;padding:4px 16px 10px}
+.callhead .av{width:84px;height:84px;font-size:34px;margin:0 auto 10px}
+.callhead small{color:#b9b0c4}
+.callscr .msgs .b{background:#2b2335;color:#f4f0f7}
+.callscr .msgs .b.me{background:var(--me)}
+.callscr .msgs .sys{color:#b9b0c4}
+.callscr .compose{border-color:#2b2335}
+.callscr .compose input{background:#1a1420;border-color:#3a3044;color:#f4f0f7}
+.callctl{display:flex;justify-content:center;gap:22px;padding:8px 0 18px;align-items:center}
+.big{width:64px;height:64px;border-radius:50%;border:0;display:grid;place-items:center;color:#fff;background:#3a3044}
+.big svg{width:26px;height:26px}
+.big.hang{background:#e53935}
+.big.live{background:var(--accent);box-shadow:0 0 0 0 rgba(255,61,127,.6);animation:pulse 1.4s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 16px rgba(255,61,127,0)}100%{box-shadow:0 0 0 0 rgba(255,61,127,0)}}
+@media(prefers-reduced-motion:reduce){.big.live{animation:none}}
+.ctlbl{font-size:12px;text-align:center;color:#b9b0c4;margin-top:4px}
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:10px 24px;text-align:center}
+.stage p{margin:0;font-size:17px;color:#e9e2f1;max-width:28ch}
+.stage .noaudio{font-size:15px;color:#cfc5db;background:#2b2335;border-radius:14px;padding:10px 12px}
+.wave{display:flex;gap:6px;align-items:center;height:56px}
+.wave i{width:6px;height:10px;border-radius:3px;background:#5b4d6b;transition:background .2s}
+.wave.on i{background:var(--accent);animation:wv 0.9s ease-in-out infinite}
+.wave.me i{background:#6f9bff}
+.wave i:nth-child(2n){animation-delay:-.3s}.wave i:nth-child(3n){animation-delay:-.6s}
+@keyframes wv{50%{height:48px}}
+@media(prefers-reduced-motion:reduce){.wave.on i{animation:none;height:30px}}
+.helpbox{margin:0 12px 8px;padding:10px 12px;border-radius:14px;background:#2b2335;font-size:14px;white-space:pre-wrap;max-height:130px;overflow:auto}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border-radius:16px;border:1px solid #3a3044;background:transparent;color:#d9d0e4;font-size:13px}
+.callscr .round{background:#2b2335;border-color:#3a3044;color:#fff}
+/* side */
+.ticket{background:var(--accent);color:#fff;border-radius:22px;padding:22px 24px;position:relative;overflow:hidden}
+.ticket::after{content:"";position:absolute;right:-26px;top:50%;width:52px;height:52px;border-radius:50%;background:var(--bg);transform:translateY(-50%)}
+.ticket p{margin:4px 0 14px;opacity:.92;max-width:52ch}
+.opts{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding-right:22px}
+@media(max-width:700px){.opts{grid-template-columns:minmax(0,1fr)}}
+.opts li{background:rgba(255,255,255,.16);border-radius:14px;padding:10px 12px;font-weight:600;display:flex;gap:10px}
+.opts li span{font:800 20px Outfit,sans-serif;opacity:.8}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px;margin-top:18px}
+.steps{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:8px}
+.steps li{display:flex;gap:10px;align-items:center}
+.tick{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none}
+.steps li.done .tick{background:var(--ok);border-color:var(--ok);color:#fff}
+.steps li.done{color:var(--muted)}
+.tick svg{width:14px;height:14px}
+.row2{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.trans{max-height:320px;overflow:auto;background:var(--soft);border-radius:14px;padding:12px 14px;font-size:14px;white-space:pre-wrap;margin-top:12px}
+.note{font-size:13px;color:var(--muted);margin-top:8px}
+.win{border-color:var(--ok);background:light-dark(#eefaf2,#15261c)}
+.win h3{color:var(--ok)}
+/* teacher */
+.tgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+@media(max-width:800px){.tgrid{grid-template-columns:minmax(0,1fr)}}
+label{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
+label:first-child{margin-top:0}
+input[type=text],select,textarea{width:100%;min-height:44px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:10px 12px;font-size:16px}
+textarea{min-height:120px;resize:vertical;line-height:1.45}
+.check{display:flex;gap:10px;align-items:center;font-weight:500;margin-top:14px}
+.check input{width:22px;height:22px}
+table{border-collapse:collapse;width:100%;font-size:15px;margin-top:10px}
+td,th{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+.ok{color:var(--ok);font-weight:600}.no{color:var(--bad);font-weight:600}
+.err{background:light-dark(#fdecec,#3a1c1c);color:var(--bad);padding:10px 12px;border-radius:12px;font-size:14px;margin:8px 12px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Night Out</h1>
+      <p id="sub">Call three friends, find the one plan that works for everyone, then text the group to confirm it.</p>
+    </div>
+    <div class="row2" style="margin:0">
+      <input type="text" id="student" placeholder="Your name" aria-label="Your name" style="width:180px">
+    </div>
+  </header>
+
+  <section id="studentView" class="grid">
+    <div class="phone"><div class="screen" id="screen"></div></div>
+    <div>
+      <div class="ticket">
+        <h2>This weekend's options</h2>
+        <p>Only one of these works for all three friends. Each friend has a different schedule, and they don't know each other's plans.</p>
+        <ol class="opts" id="opts"></ol>
+      </div>
+      <div class="card" id="progress">
+        <h3>Your steps</h3>
+        <ol class="steps" id="steps"></ol>
+        <p class="note">Your first contact with each friend has to be a phone call. Calls are listening and speaking only: no captions. After that you can call again or send a text. The group text opens once you've called everyone.</p>
+      </div>
+      <div class="card">
+        <h3>Transcript</h3>
+        <p class="note" style="margin-top:4px">Everything you say and write is recorded. When you finish, download it and send it to your instructor.</p>
+        <div class="row2">
+          <button class="btn primary" id="dl">Download transcript</button>
+          <button class="btn" id="copy">Copy</button>
+          <button class="btn" id="restart">Start over</button>
+        </div>
+        <div class="trans" id="trans" hidden></div>
+        <p class="note" id="copyMsg" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+{
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const IC={
+ phone:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>',
+ msg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+ back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>',
+ mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+ send:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg>',
+ hang:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-3.2 0-6.2.8-8.8 2.3a1 1 0 0 0-.5 1.2l.9 2.6a1 1 0 0 0 1.2.6l3-1a1 1 0 0 0 .7-1V11.5a12 12 0 0 1 7 0v2.2a1 1 0 0 0 .7 1l3 1a1 1 0 0 0 1.2-.6l.9-2.6a1 1 0 0 0-.5-1.2A17.6 17.6 0 0 0 12 9z"/></svg>',
+ play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 4V5L7 9zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg>',
+ check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
+ group:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="8" r="3.2"/><circle cx="16.5" cy="9" r="2.6"/><path d="M2 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5zm12.5 0c0-2-.7-3.6-1.9-4.7a5 5 0 0 1 9.4 2.7V19z"/></svg>'
+};
+const LANGS={
+ es:{name:'Spanish',tts:'es',names:['Sofía','Mateo','Lucía']},
+ fr:{name:'French',tts:'fr',names:['Camille','Hugo','Léa']},
+ de:{name:'German',tts:'de',names:['Lena','Jonas','Mia']},
+ it:{name:'Italian',tts:'it',names:['Giulia','Marco','Sara']},
+ pt:{name:'Portuguese (Brazil)',tts:'pt-BR',names:['Ana','Pedro','Beatriz']},
+ en:{name:'English',tts:'en',names:['Maya','Jon','Priya']},
+ ja:{name:'Japanese',tts:'ja',names:['Yuki','Kenta','Haruna']},
+ zh:{name:'Mandarin Chinese',tts:'zh',names:['Lili','Xiaoming','Wei']},
+ ko:{name:'Korean',tts:'ko',names:['Jiwoo','Minho','Seoyeon']},
+ ar:{name:'Arabic',tts:'ar',names:['Layla','Omar','Nour']}
+};
+const DEF={
+ en:{acts:['Movie — Friday, 8:00 p.m.','Bowling — Saturday, 2:00 p.m.','Brunch — Sunday, 11:00 a.m.'],
+     st:"Hi, it's ___. How are you?\nAre you free on ___?\nDo you want to go ___?\nWhat about ___?\nI'm sorry, I can't.\nOK, see you! Bye!"},
+ es:{acts:['El cine — viernes, 8:00 de la noche','Jugar a los bolos — sábado, 2:00 de la tarde','Bailar — sábado, 9:00 de la noche','El brunch — domingo, 11:00 de la mañana'],
+     st:"Hola, soy ___. ¿Qué tal?\n¿Estás libre el ___?\n¿Quieres ir a ___?\n¿Y el ___?\nLo siento, no puedo.\nVale, ¡hasta luego! Adiós."},
+ fr:{acts:['Le cinéma — vendredi, 20 h','Le bowling — samedi, 14 h','Danser — samedi, 21 h','Le brunch — dimanche, 11 h'],
+     st:"Salut, c'est ___. Ça va ?\nTu es libre ___ ?\nTu veux aller ___ ?\nEt ___ ?\nDésolé(e), je ne peux pas.\nD'accord, à plus ! Salut !"},
+ de:{acts:['Kino — Freitag, 20 Uhr','Bowling — Samstag, 14 Uhr','Tanzen gehen — Samstag, 21 Uhr','Brunch — Sonntag, 11 Uhr'],
+     st:"Hallo, hier ist ___. Wie geht's?\nHast du am ___ Zeit?\nWillst du ___ gehen?\nUnd ___?\nTut mir leid, ich kann nicht.\nOkay, bis dann! Tschüss!"}
+};
+const REASONS=['you have to work','you have a family dinner','you have a soccer game','you are visiting your grandmother','you have to study for a big test','you are babysitting your little brother','you have a dentist appointment','you are going to a cousin\'s birthday party'];
+const TRAITS=['cheerful and chatty','a little shy; gives short answers','funny; likes to make small jokes','relaxed and friendly','very enthusiastic'];
+const COLORS=['#ff7a45','#7b61ff','#14a38b'];
+// Friends and voices: gender of each name matches its voice.
+const FRIENDS=[{name:'Maya',gender:'female',voice:'airy'},{name:'Jon',gender:'male',voice:'buttery'},{name:'Priya',gender:'female',voice:'glassy'}];
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const load=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
+const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+
+let S={lang:'en',level:'Novice Mid to Novice High',rate:'0.85',acts:DEF.en.acts.slice(),starters:DEF.en.st,examples:'',student:load('nightout-student')||''};
+function newGame(){
+  const works=Math.floor(Math.random()*3);
+  const out=[0,1,2].filter(x=>x!==works);
+  const others=shuffle([out[0],out[1],out[Math.floor(Math.random()*2)]]);
+  const rs=shuffle(REASONS.slice()),tr=shuffle(TRAITS.slice());
+  return {works,friends:FRIENDS.map((p,i)=>({name:p.name,gender:p.gender,voice:p.voice,color:COLORS[i],trait:tr[i],busy:others[i],reason:rs[i]})),log:[],calls:0,group:{},done:false};
+}
+let G=load('nightout-en3-game')||newGame();
+const save=()=>{store('nightout-student',S.student);store('nightout-en3-game',G)};
+const L=()=>LANGS[S.lang]||LANGS.en;
+
+const use=n=>(window.claude&&claude.use)?claude.use(n):Promise.resolve(null);
+let heard='',speaking=false,sample=null,T=null,D=null,view={s:'home'},busy=false,callTimer=null,callStart=0,curCall=0,listening=false,sendAfterStop=false,errMsg='';
+use('sample').then(x=>{sample=x;render()}).catch(()=>{});
+use('tts').then(x=>{T=x;if(T)T.onState(({state})=>{speaking=state==='speaking';updateCall()})}).catch(()=>{});
+use('dictation').then(x=>{D=x;if(!D)return;
+  D.onPartial(({text})=>{if(view.s==='call')return;const i=$('#inp');if(i)i.placeholder=text||'Listening…'});
+  D.onFinal(({text})=>{if(!text)return;if(view.s==='call'){heard+=' '+text.trim();return}const i=$('#inp');if(i){i.value=(i.value?i.value+' ':'')+text.trim()}});
+  D.onState(({state})=>{listening=state==='listening';const m=$('#mic');if(m){m.classList.toggle('live',listening);const l=$('#micl');if(l)l.textContent=listening?'Tap when done':'Tap to talk'}updateCall();
+    const i=$('#inp');if(i&&!listening)i.placeholder=view.s==='call'?'Or type what you say…':'Text message';});
+  render();}).catch(()=>{});
+const claudeOk=()=>!!sample;
+
+/* ---------- prompts ---------- */
+function optList(){return S.acts.map((a,k)=>`${k+1}. ${a}`).join('\n')}
+function persona(i){
+  const f=G.friends[i],ln=L().name;
+  const free=S.acts.map((a,k)=>k).filter(k=>k!==f.busy).map(k=>`option ${k+1}`).join(', ');
+  return `You are ${f.name}, a friend of the student, in a ${ln} language-learning role-play. Speak ONLY ${ln}.
+Learner level: ${S.level} (ACTFL). Keep every turn very short: 1–2 simple sentences, at most about 20 words, high-frequency vocabulary, mostly present tense. You are ${f.gender==='male'?'a young man':'a young woman'}. Personality: ${f.trait}.
+Situation: the student is planning a night out with you and two other friends. The possible plans are:
+${optList()}
+YOUR PRIVATE SCHEDULE (keep it consistent at all times): you are NOT free for option ${f.busy+1} (${S.acts[f.busy]}) because ${f.reason}. You are free for ${free}, and you would enjoy any of them.
+Answer what the student asks; don't recite your whole schedule unless asked. You do NOT know the other friends' schedules; if the student tells you about them, believe it. Never decide the plan for the student and never say which option works for everyone.
+Let the student lead. Do NOT bring up the weekend, going out, or any of the plans yourself: wait until the student suggests doing something together. Until then, only answer and return small talk (for example, how you are). Once the student asks about a day or a plan, answer it.
+Don't correct grammar explicitly; if a form was wrong, you may naturally reuse the correct form in your reply. If you didn't understand, ask them to repeat, simply.
+${S.examples.trim()?`Teacher's example conversations. Follow their etiquette, content and language level:\n"""\n${S.examples.trim()}\n"""`:''}`;
+}
+function hist(i){
+  return G.log.filter(e=>!e.sys&&(e.f===i||e.ch==='group')).map(e=>{
+    const where=e.ch==='call'?'phone call':e.ch==='text'?'private text':'group chat';
+    const who=e.who==='me'?'Student':e.who===i?`You (${G.friends[i].name})`:G.friends[e.who].name;
+    return `[${where}] ${who}: ${e.text}`}).join('\n')||'(nothing yet)';
+}
+async function ask(p,tier){const r=await sample(p,{modelTier:tier||'quick',cache:false});return (r.text||'').trim()}
+async function friendTurn(i,ch,opening){
+  const how=ch==='call'
+   ?`Channel now: a PHONE CALL (spoken). ${opening?'The phone is ringing and you do NOT know who is calling. Answer with a simple phone greeting such as "Hello?" and nothing else. Do not use any name.':'Continue the call. Only use the caller\'s name after they have told you who they are on this call; if they have not said who they are yet, you may ask "Who is this?". If the student says goodbye, say a short, natural goodbye.'}`
+   :'Channel now: a private TEXT MESSAGE. Reply like a short text; simple texting style is fine. You already know the student from the phone call.';
+  const p=`${persona(i)}\n\nEverything between you and the student so far:\n${hist(i)}\n\n${how}\nWrite ONLY your next line as ${G.friends[i].name}: plain text, no quotes, no name label, no stage directions, no translation.`;
+  return (await ask(p)).replace(/^["“]|["”]$/g,'').replace(new RegExp('^'+G.friends[i].name+'\\s*:\\s*'),'');
+}
+async function groupTurn(i){
+  const p=`${persona(i)}\n\nEverything between you and the student so far (including the group chat with the other two friends):\n${hist(i)}\n\nThe student has just written in the GROUP CHAT with all three friends. Decide how you react:
+- If the student's latest group message clearly proposes one of the 3 options and you are free then, accept happily.
+- If it proposes an option you are NOT free for, push back politely and say why (briefly).
+- If it is not clear which option they mean, ask simply.
+Reply ONLY with JSON: {"reply":"<your short group-chat message in ${L().name}>","option":<1-3, or 0 if unclear>,"status":"accept"|"reject"|"unclear"}`;
+  const t=await ask(p,'default');
+  try{const j=JSON.parse(t.slice(t.indexOf('{'),t.lastIndexOf('}')+1));return {reply:String(j.reply||''),option:+j.option||0,status:j.status||'unclear'}}
+  catch(e){return {reply:t,option:0,status:'unclear'}}
+}
+
+/* ---------- actions ---------- */
+const called=i=>G.log.some(e=>e.ch==='call'&&e.f===i&&e.who==='me');
+const allCalled=()=>[0,1,2].every(called);
+function push(e){G.log.push(Object.assign({t:Date.now()},e));save();renderMsgs();renderSide()}
+function speak(i,text){if(!T){updateCall();return}try{T.speak(text,{voice:G.friends[i].voice,rate:+S.rate,language:L().tts}).catch(()=>{})}catch(e){}}
+function go(v){view=v;errMsg='';render()}
+async function startCall(i){
+  if(!claudeOk())return;
+  curCall=++G.calls;go({s:'call',f:i,ringing:true});
+  push({ch:'call',f:i,c:curCall,sys:`Call with ${G.friends[i].name} started`});
+  busy=true;renderMsgs();
+  try{const line=await friendTurn(i,'call',true);view.ringing=false;callStart=Date.now();tick();
+      push({ch:'call',f:i,c:curCall,who:i,text:line});speak(i,line)}
+  catch(e){errMsg='The friend could not answer. Try again in a moment.';view.ringing=false}
+  busy=false;render();
+}
+function hangUp(){
+  if(T)try{T.stop()}catch(e){}
+  if(listening&&D){sendAfterStop=false;D.stop().catch(()=>{})}
+  clearInterval(callTimer);
+  push({ch:'call',f:view.f,c:curCall,sys:`Call ended (${fmtTime(Date.now()-(callStart||Date.now()))})`});
+  go({s:'home'});
+}
+async function send(said){
+  const inp=$('#inp');const text=said!=null?said:(inp?inp.value.trim():'');if(!text||busy||!claudeOk())return;
+  if(inp&&said==null)inp.value='';const v=view;
+  if(v.s==='call'||v.s==='chat'){
+    const ch=v.s==='call'?'call':'text';
+    push({ch,f:v.f,c:ch==='call'?curCall:0,who:'me',text});busy=true;renderMsgs();
+    try{const line=await friendTurn(v.f,ch,false);if(view!==v){busy=false;return}
+        push({ch,f:v.f,c:ch==='call'?curCall:0,who:v.f,text:line});if(ch==='call')speak(v.f,line)}
+    catch(e){errMsg='No reply came. Send your message again.';render()}
+    busy=false;renderMsgs();
+  } else if(v.s==='group'){
+    push({ch:'group',f:null,who:'me',text});busy=true;
+    for(const i of shuffle([0,1,2])){
+      view.typing=G.friends[i].name;renderMsgs();
+      try{const r=await groupTurn(i);G.group[i]=r;push({ch:'group',f:null,who:i,text:r.reply})}
+      catch(e){errMsg='Some friends did not reply. Send the message again.'}
+    }
+    view.typing=null;busy=false;
+    const g=[0,1,2].map(i=>G.group[i]||{});
+    if(!G.done&&g.every(x=>x.status==='accept')&&g.every(x=>x.option===G.works+1)){
+      G.done=true;push({ch:'group',f:null,sys:'Everyone agreed. Plan confirmed!'})}
+    save();render();
+  }
+}
+function micClick(){
+  if(!D)return;
+  if(listening){sendAfterStop=true;D.stop().then(()=>{if(sendAfterStop){sendAfterStop=false;if(view.s==='call'){const h=heard.trim();heard='';if(h){errMsg='';send(h)}else{errMsg='I didn\'t hear anything. Tap the mic and try again.';renderMsgs()}}else send()}}).catch(()=>{});return}
+  heard='';
+  if(T)try{T.stop()}catch(e){}
+  D.start().catch(e=>{if(e&&e.code==='not_granted'){D=null;render()}});
+}
+const fmtTime=ms=>{const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function tick(){clearInterval(callTimer);callTimer=setInterval(()=>{const el=$('#ctime');if(el)el.textContent=fmtTime(Date.now()-callStart)},1000)}
+
+/* ---------- render phone ---------- */
+const av=(i,big)=>`<div class="av" style="background:${G.friends[i].color}">${esc(G.friends[i].name[0])}</div>`;
+const statusBar=()=>`<div class="status"><span>${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}</span><span>5G ▮▮▮</span></div>`;
+function render(){
+  const sc=$('#screen');sc.className='screen';
+  if(!claudeOk()){
+    sc.innerHTML=statusBar()+`<div class="appbar"><h2>Contacts</h2></div><div class="hint">Your friends are getting ready… If this message stays, open this page on claude.ai, where the AI friends can answer.</div>`;
+    renderSide();return}
+  const v=view;
+  if(v.s==='home'){
+    sc.innerHTML=statusBar()+`<div class="appbar"><h2>Contacts</h2></div><div class="list">`+
+     G.friends.map((f,i)=>`<div class="row">${av(i)}<div class="who"><b>${esc(f.name)}</b><small>${called(i)?'Called':'Not called yet — call first'}</small></div>
+       <button class="round call" data-call="${i}" aria-label="Call ${esc(f.name)}">${IC.phone}</button>
+       <button class="round" data-chat="${i}" ${called(i)?'':'disabled'} aria-label="Text ${esc(f.name)}">${IC.msg}</button></div>`).join('')+
+     `<div class="row"><div class="av" style="background:#1d1a22">${IC.group.replace('<svg','<svg width="24" height="24"')}</div><div class="who"><b>Night Out group</b><small>${allCalled()?(G.done?'Plan confirmed':'Text everyone your plan'):'Opens after you call all three'}</small></div>
+       <button class="round" data-group ${allCalled()?'':'disabled'} aria-label="Open group chat">${IC.msg}</button></div></div>
+     <div class="hint">Tip: write down what each friend tells you. Then text the group with the day, time and activity.</div>`;
+  } else if(v.s==='call'){
+    sc.classList.add('callscr');const f=G.friends[v.f];
+    sc.innerHTML=statusBar()+`<div class="callhead">${av(v.f)}<h2>${esc(f.name)}</h2><small id="ctime">${v.ringing?'Calling…':'0:00'}</small></div>
+     <div class="stage"><div class="wave" id="wave" aria-hidden="true">${'<i></i>'.repeat(9)}</div><p id="cstat" aria-live="polite"></p><p id="noaudio" class="noaudio" hidden></p></div>
+     <div id="err"></div>
+     <div class="helpbox" id="help" hidden>${esc(S.starters)}</div>
+     <div class="row2" style="margin:0 12px 6px;justify-content:center"><button class="chip" id="helpBtn" aria-expanded="false">Phrases</button><button class="chip" id="replay">${IC.play.replace('<svg','<svg width="14" height="14"')} Hear again</button></div>
+     ${D?'':`<div class="compose"><input id="inp" placeholder="No microphone here: type what you say" autocomplete="off" aria-label="What you say"><button class="round" id="send" aria-label="Say it">${IC.send}</button></div>`}
+     <div class="callctl">
+       ${D?`<div><button class="big ${listening?'live':''}" id="mic" aria-label="Talk">${IC.mic}</button><div class="ctlbl" id="micl">Tap to talk</div></div>`:''}
+       <div><button class="big hang" id="hang" aria-label="Hang up">${IC.hang}</button><div class="ctlbl">Hang up</div></div></div>`;
+  } else {
+    const isG=v.s==='group',title=isG?'Night Out group':G.friends[v.f].name;
+    sc.innerHTML=statusBar()+`<div class="appbar"><button class="icon" id="back2" aria-label="Back">${IC.back}</button>${isG?'':av(v.f)}<h2>${esc(title)}</h2>
+      ${isG?'':`<button class="round call" data-call="${v.f}" aria-label="Call ${esc(title)}">${IC.phone}</button>`}</div>
+     <div class="msgs" id="msgs" aria-live="polite"></div><div id="err"></div>
+     <div class="compose">${D?`<button class="round" id="mic" aria-label="Dictate">${IC.mic}</button>`:''}<input id="inp" placeholder="Text message" autocomplete="off" aria-label="Message"><button class="round" id="send" aria-label="Send" style="background:var(--me);color:#fff;border-color:var(--me)">${IC.send}</button></div>`;
+  }
+  sc.querySelectorAll('[data-call]').forEach(b=>b.onclick=()=>startCall(+b.dataset.call));
+  sc.querySelectorAll('[data-chat]').forEach(b=>b.onclick=()=>go({s:'chat',f:+b.dataset.chat}));
+  const gb=sc.querySelector('[data-group]');if(gb)gb.onclick=()=>go({s:'group'});
+  const on=(id,fn)=>{const el=sc.querySelector(id);if(el)el.onclick=fn};
+  on('#back2',()=>go({s:'home'}));on('#hang',hangUp);on('#send',send);on('#mic',micClick);
+  on('#helpBtn',e=>{const h=$('#help');h.hidden=!h.hidden;e.currentTarget.setAttribute('aria-expanded',!h.hidden)});
+  on('#replay',()=>{const last=G.log.filter(e=>e.ch==='call'&&e.c===curCall&&e.who===view.f).pop();if(last)speak(view.f,last.text)});
+  const inp=$('#inp');if(inp)inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();send()}};
+  if(v.s==='call'&&!v.ringing)tick();
+  renderMsgs();renderSide();
+}
+function updateCall(){
+  const st=$('#cstat');if(!st||view.s!=='call')return;const n=G.friends[view.f].name;
+  let msg=view.ringing?'Ringing…':listening?'Listening… tap the mic when you finish.':busy?`${n} is about to answer…`:speaking?`${n} is talking. Listen!`:(D?'Your turn. Tap the mic and speak.':'Your turn.');
+  st.textContent=msg;$('#wave').classList.toggle('on',speaking||listening);$('#wave').classList.toggle('me',listening);
+  const na=$('#noaudio');const last=G.log.filter(e=>e.ch==='call'&&e.c===curCall&&e.who===view.f).pop();
+  if(na){na.hidden=!!T||!last;if(!T&&last)na.textContent=`Audio can't play in this browser, so here is what ${n} said: “${last.text}”`}
+  const er=$('#err');if(er)er.innerHTML=errMsg?`<div class="err">${esc(errMsg)}</div>`:'';
+}
+function renderMsgs(){
+  if(view.s==='call'){updateCall();return}
+  const box=$('#msgs');if(!box)return;const v=view;let items;
+  if(v.s==='call')items=G.log.filter(e=>e.ch==='call'&&e.c===curCall);
+  else if(v.s==='chat')items=G.log.filter(e=>e.ch==='text'&&e.f===v.f);
+  else items=G.log.filter(e=>e.ch==='group');
+  box.innerHTML=items.map(e=>{
+    if(e.sys)return `<div class="sys">${esc(e.sys)}</div>`;
+    if(e.who==='me')return `<div class="b me">${esc(e.text)}</div>`;
+    const name=v.s==='group'?`<span class="n" style="color:${G.friends[e.who].color}">${esc(G.friends[e.who].name)}</span>`:'';
+    if(v.s==='call'&&!S.captions)return `<div class="b"><i>${esc(G.friends[e.who].name)} is speaking…</i></div>`;
+    return `<div class="b">${name}${esc(e.text)}</div>`}).join('')+
+    (busy?`<div class="typing">${v.s==='call'?(v.ringing?'Ringing…':'…'):esc((v.typing||(v.f!=null&&G.friends[v.f]?G.friends[v.f].name:'Someone')))+' is typing…'}</div>`:'')+
+    (v.s==='chat'&&!items.length?'<div class="sys">Send a text to follow up on your call.</div>':'')+
+    (v.s==='group'&&!items.length?'<div class="sys">Send one message to all three friends with the plan: day, time and activity.</div>':'');
+  box.scrollTop=box.scrollHeight;
+  const er=$('#err');if(er)er.innerHTML=errMsg?`<div class="err">${esc(errMsg)}</div>`:'';
+}
+
+/* ---------- side panel ---------- */
+function renderSide(){
+  $('#opts').innerHTML=S.acts.map((a,k)=>`<li><span>${k+1}</span>${esc(a)}</li>`).join('');
+  const st=[...G.friends.map((f,i)=>[`Call ${f.name}`,called(i)]),['Text the group with your plan',G.log.some(e=>e.ch==='group'&&e.who==='me')],['Everyone agrees',G.done]];
+  $('#steps').innerHTML=st.map(([t,d])=>`<li class="${d?'done':''}"><span class="tick">${d?IC.check:''}</span>${esc(t)}</li>`).join('');
+  const pr=$('#progress');pr.classList.toggle('win',G.done);
+  pr.querySelector('h3').textContent=G.done?`Plan confirmed: ${S.acts[G.works]}`:'Your steps';
+  if(!$('#trans').hidden)$('#trans').textContent=transcript();
+}
+function transcript(){
+  const out=[`NIGHT OUT — transcript`,`Student: ${S.student||'(no name)'}`,`Language: ${L().name} · Level: ${S.level}`,`Date: ${new Date().toLocaleString()}`,'',`Options:`,optList(),''];
+  let key='';
+  for(const e of G.log){
+    const k=e.ch+'|'+(e.ch==='call'?e.c:e.f);
+    if(k!==key){key=k;const tm=new Date(e.t).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+      out.push('',e.ch==='call'?`— Phone call with ${G.friends[e.f].name} (${tm}) —`:e.ch==='text'?`— Texts with ${G.friends[e.f].name} (${tm}) —`:`— Group chat (${tm}) —`)}
+    out.push(e.sys?`[${e.sys}]`:`${e.who==='me'?(S.student||'Student'):G.friends[e.who].name}: ${e.text}`);
+  }
+  out.push('',`Result: ${G.done?`Plan confirmed by all three friends: option ${G.works+1} (${S.acts[G.works]})`:'Not finished yet'}`);
+  return out.join('\n');
+}
+
+/* ---------- side buttons + routing ---------- */
+$('#student').value=S.student||'';$('#student').oninput=e=>{S.student=e.target.value;save()};
+$('#copy').onclick=()=>{navigator.clipboard.writeText(transcript()).then(()=>$('#copyMsg').textContent='Transcript copied.').catch(()=>{$('#trans').hidden=false;$('#trans').textContent=transcript();$('#copyMsg').textContent='Copying was blocked. Select the text above and copy it.'})};
+let DL=null;use('downloads').then(x=>{DL=x}).catch(()=>{});
+$('#dl').onclick=async()=>{
+  const name=`night-out-${(S.student||'student').replace(/[^\w-]+/g,'-')}.txt`;
+  if(!DL){$('#trans').hidden=false;$('#trans').textContent=transcript();$('#copyMsg').textContent='Downloading isn\'t available here. Use Copy instead.';return}
+  try{await DL.save({filename:name,data:transcript()});$('#copyMsg').textContent='Transcript saved.'}catch(e){$('#copyMsg').textContent='The download was cancelled.'}
+};
+const restartBtn=$('#restart');let armed=false;
+restartBtn.onclick=()=>{if(!armed){armed=true;restartBtn.textContent='Tap again to erase everything';setTimeout(()=>{armed=false;restartBtn.textContent='Start over'},3500);return}
+  armed=false;restartBtn.textContent='Start over';G=newGame();save();go({s:'home'})};
+render();
+}
+</script>
+</body>
+</html>
