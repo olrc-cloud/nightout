@@ -271,10 +271,10 @@ async function api(i,mode){
     body:JSON.stringify({mode,friend:i,busy:f.busy,reason:f.reason,trait:f.trait,history:hist(i),code})});
   const d=await r.json().catch(()=>({}));
   if(r.status===401){needCode=true;$('#code').hidden=false;throw new Error('code')}
-  if(!r.ok)throw new Error(d.error||'error');
+  if(!r.ok)throw new Error(d.error||(r.status===404?'The server function was not found (404). Check that Netlify deployed netlify/functions/chat.mjs.':`Server error ${r.status}`));
   return d;
 }
-const problem=e=>e&&e.message==='code'?'Enter the class code from your teacher at the top of the page, then try again.':'No reply came. Check your connection and try again.';
+const problem=e=>e&&e.message==='code'?'Enter the class code from your teacher at the top of the page, then try again.':`No reply came. ${e&&e.message&&e.message!=='Failed to fetch'?'Details: '+e.message:'Check your connection and try again.'}`;
 
 /* ---------- actions ---------- */
 const called=i=>G.log.some(e=>e.ch==='call'&&e.f===i&&e.who==='me');
