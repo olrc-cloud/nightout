@@ -253,13 +253,21 @@ function micClick(){
   rec=new SR();rec.lang='en-US';rec.continuous=true;rec.interimResults=false;
   rec.onresult=e=>{for(let k=e.resultIndex;k<e.results.length;k++)if(e.results[k].isFinal)heard+=' '+e.results[k][0].transcript};
   rec.onstart=()=>{listening=true;updMic()};
-  rec.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){micOk=false;errMsg='The microphone is blocked. Allow it in your browser settings, or type instead.';render()}};
+  rec.onerror=e=>{
+    const M={'not-allowed':'The microphone is blocked for this site. Click the icon at the left of the address bar, set Microphone to Allow, then reload the page.',
+      'service-not-allowed':'This browser does not allow speech recognition here. Try Chrome or Edge.',
+      'audio-capture':'No microphone was found, or your computer is blocking the browser from using it. Check your system privacy settings for the microphone.',
+      'network':'The speech service could not be reached. Brave and some school networks block it. Try Chrome or Edge on another network.',
+      'no-speech':"I didn't hear anything. Tap the mic and try again."};
+    errMsg=M[e.error]||('The microphone stopped ('+e.error+'). Tap the mic and try again.');
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){micOk=false;render()}else renderMsgs();
+  };
   rec.onend=()=>{
     listening=false;updMic();const h=heard.trim();heard='';
     if(view.s==='call'){if(h)send(h);else if(!errMsg){errMsg="I didn't hear anything. Tap the mic and try again.";renderMsgs()}}
     else{const i=$('#inp');if(i&&h)i.value=(i.value?i.value+' ':'')+h}
   };
-  try{rec.start()}catch(e){}
+  try{rec.start()}catch(e){errMsg='The microphone could not start. Reload the page and try again.';renderMsgs()}
 }
 function updMic(){const m=$('#mic');if(m)m.classList.toggle('live',listening);const l=$('#micl');if(l)l.textContent=listening?'Tap when done':'Tap to talk';updateCall()}
 
@@ -345,7 +353,7 @@ function render(){
      <div id="err"></div>
      <div class="helpbox" id="help" hidden>${esc(STARTERS)}</div>
      <div class="row2" style="margin:0 12px 6px;justify-content:center"><button class="chip" id="helpBtn" aria-expanded="false">Phrases</button><button class="chip" id="replay">${IC.play.replace('<svg','<svg width="14" height="14"')} Hear again</button></div>
-     ${micOk?'':`<div class="compose"><input id="inp" placeholder="No microphone here: type what you say" autocomplete="off" aria-label="What you say"><button class="round" id="send" aria-label="Say it">${IC.send}</button></div>`}
+     ${micOk?'':`<p class="note" style="color:#cfc5db;text-align:center;margin:0 16px 6px">${SR?'The microphone is blocked, so type what you say.':'This browser can\'t use the microphone for this activity. Use Chrome or Edge to speak, or type for now.'}</p><div class="compose"><input id="inp" placeholder="Type what you say" autocomplete="off" aria-label="What you say"><button class="round" id="send" aria-label="Say it">${IC.send}</button></div>`}
      <div class="callctl">
        ${micOk?`<div><button class="big ${listening?'live':''}" id="mic" aria-label="Talk">${IC.mic}</button><div class="ctlbl" id="micl">Tap to talk</div></div>`:''}
        <div><button class="big hang" id="hang" aria-label="Hang up">${IC.hang}</button><div class="ctlbl">Hang up</div></div></div>`;
