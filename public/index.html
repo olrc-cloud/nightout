@@ -369,8 +369,7 @@ function render(){
     sc.innerHTML=statusBar()+`<div class="callhead">${av(v.f)}<h2>${esc(f.name)}</h2><small id="ctime">${v.ringing?'Calling…':'0:00'}</small></div>
      <div class="stage"><div class="wave" id="wave" aria-hidden="true">${'<i></i>'.repeat(9)}</div><p id="cstat" aria-live="polite"></p><p id="noaudio" class="noaudio" hidden></p></div>
      <div id="err"></div>
-     <div class="helpbox" id="help" hidden>${esc(STARTERS)}</div>
-     <div class="row2" style="margin:0 12px 6px;justify-content:center"><button class="chip" id="helpBtn" aria-expanded="false">Phrases</button><button class="chip" id="replay">${IC.play.replace('<svg','<svg width="14" height="14"')} Hear again</button></div>
+     <div class="row2" style="margin:0 12px 6px;justify-content:center"><button class="chip" id="replay">${IC.play.replace('<svg','<svg width="14" height="14"')} Hear again</button></div>
      ${micOk?'':`<p class="note" style="color:#cfc5db;text-align:center;margin:0 16px 6px">${SR?'The microphone is blocked, so type what you say.':'This browser can\'t use the microphone for this activity. Use Chrome or Edge to speak, or type for now.'}</p><div class="compose"><input id="inp" placeholder="Type what you say" autocomplete="off" aria-label="What you say"><button class="round" id="send" aria-label="Say it">${IC.send}</button></div>`}
      <div class="callctl">
        ${micOk?`<div><button class="big ${listening?'live':''}" id="mic" aria-label="Talk">${IC.mic}</button><div class="ctlbl" id="micl">Tap to talk</div></div>`:''}
@@ -387,7 +386,6 @@ function render(){
   const gb=sc.querySelector('[data-group]');if(gb)gb.onclick=()=>go({s:'group'});
   const on=(id,fn)=>{const el=sc.querySelector(id);if(el)el.onclick=fn};
   on('#back2',()=>go({s:'home'}));on('#hang',hangUp);on('#send',()=>send());on('#mic',micClick);
-  on('#helpBtn',e=>{const h=$('#help');h.hidden=!h.hidden;e.currentTarget.setAttribute('aria-expanded',!h.hidden)});
   on('#replay',()=>{const last=G.log.filter(e=>e.ch==='call'&&e.c===curCall&&e.who===view.f).pop();if(last)speak(view.f,last.text)});
   const inp=$('#inp');if(inp)inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();send()}};
   if(v.s==='call'&&!v.ringing)tick();
