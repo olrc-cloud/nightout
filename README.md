@@ -14,12 +14,13 @@ Night Out is a voice-based speaking task for Novice Mid/High English learners. T
 
 1. Put these files in a GitHub repository, keeping the folders as they are.
 2. In Netlify, choose **Add new site → Import an existing project**, pick the repository, and deploy. No build command is needed.
-3. Create an API key at console.anthropic.com. Set a monthly spending limit there.
-4. In Netlify, go to **Site configuration → Environment variables** and add:
-   - `ANTHROPIC_API_KEY`: your key (required)
-   - `CLASS_CODE`: optional. If you set it, students must type this code before the friends will answer, which keeps strangers from using your key.
-   - `CLAUDE_MODEL`: optional, defaults to `claude-haiku-5-5`
-5. Go to **Deploys → Trigger deploy → Deploy site** so the new settings take effect.
+3. Choose how the friends reach Claude:
+   - **Easiest: Netlify's AI Gateway.** Turn on AI for the project in Netlify. Netlify then supplies the Claude connection itself and bills usage to your Netlify credits, so you don't need an Anthropic key. Don't add an `ANTHROPIC_API_KEY` variable in this case.
+   - **Your own Anthropic key.** Create a key at console.anthropic.com and set a monthly spending limit there. Then go to **Project configuration → Environment variables** and add `ANTHROPIC_API_KEY` with the key as its value (Functions scope).
+4. Optional environment variables:
+   - `CLASS_CODE`: students must type this code before the friends will answer.
+   - `CLAUDE_MODEL`: defaults to `claude-haiku-5-5`, falling back to `claude-haiku-4-5`.
+5. After any change to environment variables, go to **Deploys → Trigger deploy → Deploy site**.
 
 Netlify Drop (drag and drop) does not deploy the server function. Use a Git import or the Netlify command-line tool.
 

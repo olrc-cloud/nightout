@@ -3,8 +3,10 @@
 // so the endpoint can only be used for this role-play.
 //
 // Environment variables (Netlify → Site configuration → Environment variables):
-//   ANTHROPIC_API_KEY  required
-//   CLAUDE_MODEL       optional, defaults to claude-haiku-5-5
+//   ANTHROPIC_API_KEY  optional. If you don't set one, Netlify's AI Gateway supplies
+//                      ANTHROPIC_API_KEY and ANTHROPIC_BASE_URL automatically (billed to Netlify credits).
+//                      If you set your own key, calls go straight to Anthropic.
+//   CLAUDE_MODEL       optional, defaults to claude-haiku-5-5 (falls back to claude-haiku-4-5)
 //   CLASS_CODE         optional; if set, students must enter this code to play
 
 // Keep these in sync with public/index.html
@@ -74,7 +76,7 @@ Reply ONLY with JSON: {"reply":"<your short group-chat message>","option":<1-3, 
 export default async (req) => {
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
   const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return json({ error: 'The site is missing its ANTHROPIC_API_KEY setting.' }, 500);
+  if (!key) return json({ error: 'No API key found. Turn on AI for this project in Netlify, or add an ANTHROPIC_API_KEY environment variable.' }, 500);
 
   let b;
   try { b = await req.json(); } catch { return json({ error: 'Bad request' }, 400); }
@@ -94,23 +96,31 @@ export default async (req) => {
 
   const user = `Everything between you and the student so far:\n${transcript(friend, history)}\n\n${instruction(mode, friend)}`;
 
+  const base = (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/+$/, '');
+  const call = (model) => fetch(`${base}/v1/messages`, {
+    method: 'POST',
+    headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      max_tokens: 300,
+      system: persona(friend, busy, reason, trait),
+      messages: [{ role: 'user', content: user }],
+    }),
+  });
+  const models = process.env.CLAUDE_MODEL ? [process.env.CLAUDE_MODEL] : ['claude-haiku-5-5', 'claude-haiku-4-5'];
   let r, d;
   try {
-    r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model: process.env.CLAUDE_MODEL || 'claude-haiku-5-5',
-        max_tokens: 300,
-        system: persona(friend, busy, reason, trait),
-        messages: [{ role: 'user', content: user }],
-      }),
-    });
-    d = await r.json();
+    for (const m of models) {
+      r = await call(m);
+      d = await r.json().catch(() => ({}));
+      const msg = (d && d.error && d.error.message) || '';
+      // Try the next model only when this one isn't available.
+      if (r.ok || !(r.status === 404 || /model/i.test(msg))) break;
+    }
   } catch {
     return json({ error: 'Could not reach Claude.' }, 502);
   }
-  if (!r.ok) return json({ error: (d && d.error && d.error.message) || 'Claude returned an error.' }, 502);
+  if (!r.ok) return json({ error: (d && d.error && d.error.message) || `Claude returned an error (${r.status}).` }, 502);
 
   let text = (d.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('').trim();
 
