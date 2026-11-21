@@ -244,12 +244,30 @@ function speak(i,text){
 
 /* ---------- speech: microphone ---------- */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition||null;
-let rec=null,micOk=!!SR;
-function micClick(){
+let rec=null,micOk=!!SR,micChecked=false;
+async function micCheck(){
+  if(micChecked)return true;
+  if(!window.isSecureContext){errMsg='The microphone only works on the https:// web address of this activity.';return false}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return true;
+  try{const st=await navigator.mediaDevices.getUserMedia({audio:true});st.getTracks().forEach(t=>t.stop());micChecked=true;return true}
+  catch(e){
+    const m=(e&&e.message)||'',n=(e&&e.name)||'Error';
+    errMsg=/system/i.test(m)?'Your computer is blocking the browser from using the microphone. Mac: System Settings → Privacy & Security → Microphone. Windows: Settings → Privacy & security → Microphone. Then quit and reopen the browser.'
+      :n==='NotFoundError'?'No microphone was found. Plug one in or check your sound settings.'
+      :n==='NotReadableError'?'Another app is using the microphone, or the system blocked it. Close other apps that use the mic (Zoom, Teams) and try again.'
+      :n==='NotAllowedError'||n==='SecurityError'?'The browser is blocking the microphone for this site. If this is a school-managed device, your IT team may have turned the microphone off.'
+      :'The microphone could not start.';
+    errMsg+=` (Details: ${n}${m?': '+m:''})`;
+    return false;
+  }
+}
+async function micClick(){
   if(!micOk)return;
   if(listening){try{rec.stop()}catch(e){}return}
   if(synth)synth.cancel();
-  heard='';errMsg='';
+  errMsg='';
+  if(!(await micCheck())){renderMsgs();return}
+  heard='';
   rec=new SR();rec.lang='en-US';rec.continuous=true;rec.interimResults=false;
   rec.onresult=e=>{for(let k=e.resultIndex;k<e.results.length;k++)if(e.results[k].isFinal)heard+=' '+e.results[k][0].transcript};
   rec.onstart=()=>{listening=true;updMic()};
@@ -260,7 +278,7 @@ function micClick(){
       'network':'The speech service could not be reached. Brave and some school networks block it. Try Chrome or Edge on another network.',
       'no-speech':"I didn't hear anything. Tap the mic and try again."};
     errMsg=M[e.error]||('The microphone stopped ('+e.error+'). Tap the mic and try again.');
-    if(e.error==='not-allowed'||e.error==='service-not-allowed'){micOk=false;render()}else renderMsgs();
+    if(e.error==='service-not-allowed'){micOk=false;render()}else renderMsgs();
   };
   rec.onend=()=>{
     listening=false;updMic();const h=heard.trim();heard='';
